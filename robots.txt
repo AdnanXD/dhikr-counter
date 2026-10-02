@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://mydhikr.app/sitemap.xml
+Sitemap: https://dhikr-counter-gamma.vercel.app/sitemap.xml

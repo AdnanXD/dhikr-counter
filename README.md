@@ -1,6 +1,6 @@
 # Dhikr Counter (PWA)
 
-A free, ad-free dhikr / tasbih counter. One self-contained page (`index.html`, fonts embedded) plus a manifest and a service worker so it installs and works offline. For https://mydhikr.app, hosted on Vercel as a plain static site (no build step). The Android app is a Trusted Web Activity wrapper around the same site.
+A free, ad-free dhikr / tasbih counter. One self-contained page (`index.html`, fonts embedded) plus a manifest and a service worker so it installs and works offline. For https://dhikr-counter-gamma.vercel.app, hosted on Vercel as a plain static site (no build step). The Android app is a Trusted Web Activity wrapper around the same site.
 
 ## Structure
 
@@ -21,7 +21,7 @@ A free, ad-free dhikr / tasbih counter. One self-contained page (`index.html`, f
 ## Deploy
 
 1. Push this folder to a Git repo and import it in Vercel (Framework: Other, no build command, output directory `.`), or run `vercel --prod` inside the folder.
-2. Add the domain `mydhikr.app` in the Vercel project settings.
+2. Add the domain `dhikr-counter-gamma.vercel.app` in the Vercel project settings.
 3. Replace `REPLACE_WITH_PLAY_APP_SIGNING_SHA256` in `.well-known/assetlinks.json` with the SHA-256 certificate fingerprint from Play Console (App signing).
 
 ## Updating the app

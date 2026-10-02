@@ -1,5 +1,5 @@
 /* Dhikr Counter service worker. Bump CACHE whenever any file below changes (see README). */
-var CACHE = 'dhikr-v5-1';
+var CACHE = 'dhikr-v5-2';
 var PRECACHE = [
   '/', '/index.html', '/manifest.webmanifest', '/privacy.html',
   '/icon-192.png', '/icon-512.png', '/maskable-192.png', '/maskable-512.png',
