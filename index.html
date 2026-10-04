@@ -281,6 +281,28 @@ body.focus .len-l .focusline, body.focus .len-xl .focusline { display: none; }
 .row[aria-checked="true"] .sw::after { transform: translateX(22px); }
 .row:disabled .sw { opacity: 0.5; }
 
+/* v6: "Under the Arabic" = word by word (glosses) or one reflective line */
+.rline { display: none; margin: -0.35rem auto 0; max-width: 30ch; padding: 0 4px; text-align: center; font-family: var(--font-ui);
+  font-size: calc(var(--rl, 1.1875) * 1rem); line-height: 1.5; font-weight: 400; color: var(--fg-soft); text-wrap: balance; }
+.screen.mode-r .rline { display: block; }
+.screen.mode-r .w .g { display: none; }
+.screen.mode-r .easy.dup { display: none; }
+.under { border: 0; margin: 0 0 4px; padding: 0 0 14px; border-bottom: 1px solid var(--line); min-width: 0; }
+.under legend { padding: 0; margin: 0 0 10px; color: var(--muted); font-size: 1rem; font-weight: 600; }
+.opt { position: relative; display: flex; align-items: center; gap: 12px; min-height: 52px; padding: 0 14px; border: 1.5px solid var(--edge);
+  border-radius: 14px; color: var(--fg-soft); font-size: 1.0625rem; cursor: pointer; transition: border-color var(--ease), background var(--ease); }
+.opt + .opt { margin-top: 8px; }
+.opt input { position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; opacity: 0; cursor: pointer; }
+.opt .rd { flex: none; width: 22px; height: 22px; border-radius: 50%; border: 2px solid var(--muted); display: grid; place-items: center; }
+.opt .rd::after { content: ""; width: 10px; height: 10px; border-radius: 50%; background: var(--gold-text); transform: scale(0); transition: transform 200ms ease; }
+.opt:has(input:checked) { border-color: var(--gold); background: var(--gold-wash); color: var(--fg); font-weight: 600; }
+.opt:has(input:checked) .rd { border-color: var(--gold-text); }
+.opt:has(input:checked) .rd::after { transform: scale(1); }
+.opt:has(input:focus-visible) { outline: 3px solid var(--gold-text); outline-offset: 2px; }
+.sheet .reflect { margin: 0 0 18px; padding-bottom: 16px; border-bottom: 1px solid var(--line); }
+.sheet .reflect .rh { margin: 0 0 6px; font-size: 1rem; line-height: 1.4; font-weight: 600; color: var(--gold-text); }
+.sheet .reflect .rt { margin: 0; font-size: 1.25rem; line-height: 1.55; color: var(--fg); }
+
 /* target chips + custom input (Settings) */
 .tgt { padding-bottom: 14px; margin-bottom: 4px; border-bottom: 1px solid var(--line); }
 .tgt .sub { margin: 0 0 10px; color: var(--muted); font-size: 1rem; font-weight: 600; }
@@ -375,6 +397,7 @@ body.focus .stage:not(.finished) { flex: 0 0 auto; margin-top: 2vh; }
 
   <section class="phrase" aria-label="Dhikr">
     <div class="ar" id="ar" lang="ar" dir="rtl"></div>
+    <p class="rline" id="rline" lang="en"></p>
     <div class="slot" id="slot">
       <p class="reminder" id="reminder" role="status" aria-live="polite"></p>
       <p class="focusline" id="focusline"></p>
@@ -424,6 +447,11 @@ body.focus .stage:not(.finished) { flex: 0 0 auto; margin-top: 2vh; }
         <p class="cerr" id="cerr" role="alert"></p>
       </form>
     </div>
+    <fieldset class="under" id="under">
+      <legend>Under the Arabic</legend>
+      <label class="opt"><input type="radio" name="under" value="w" id="underW"><span class="rd" aria-hidden="true"></span><span>Word by word</span></label>
+      <label class="opt"><input type="radio" name="under" value="r" id="underR"><span class="rd" aria-hidden="true"></span><span>Reflective meaning</span></label>
+    </fieldset>
     <button class="row" id="remindBtn" type="button" role="switch" aria-checked="true"><span class="lbl">Reflection reminders</span><span class="sw" aria-hidden="true"></span></button>
     <button class="row" id="timerBtn" type="button" role="switch" aria-checked="true"><span class="lbl">Session timer</span><span class="sw" aria-hidden="true"></span></button>
     <p class="lastline" id="lastLine" hidden></p>
@@ -460,9 +488,12 @@ body.focus .stage:not(.finished) { flex: 0 0 auto; margin-top: 2vh; }
   var TAHLIL_TR = 'Lā ilāha illallāhu waḥdahu lā sharīka lah, lahul-mulku wa lahul-ḥamdu, wa huwa ʿalā kulli shayʾin qadīr';
   var TAHLIL_EN = 'None has the right to be worshipped but Allah alone, with no partner. His is the dominion and His is the praise, and He has power over all things.';
 
+  var TAHLIL_REFLECT = 'Only Allah deserves my worship. Everything is His, and nothing is beyond His power.';
+
   var PRESETS = [
     {
       id: 'tasbih-hamd', name: 'SubḥānAllāhi wa biḥamdih',
+      reflect: 'My Lord is perfect, free of every flaw — and for every good in my life, I praise Him.',
       ar: 'سُبْحَانَ اللَّهِ وَبِحَمْدِهِ', tr: 'SubḥānAllāhi wa biḥamdih',
       flow: [['سُبْحَانَ', 'Glory be'], ['اللَّهِ', 'to Allah'], ['وَبِحَمْدِهِ', 'and with His praise']],
       meaning: 'Glory be to Allah, and praise be to Him.', easy: 'Allah is perfect, and I praise Him.',
@@ -475,6 +506,7 @@ body.focus .stage:not(.finished) { flex: 0 0 auto; margin-top: 2vh; }
     },
     {
       id: 'istighfar', name: 'Istighfār',
+      reflect: 'O Allah, I have fallen short. Cover my faults — I am turning back to You.',
       ar: 'أَسْتَغْفِرُ اللَّهَ وَأَتُوبُ إِلَيْهِ', tr: 'Astaghfirullāha wa atūbu ilayh',
       flow: [['أَسْتَغْفِرُ', 'I seek forgiveness'], ['اللَّهَ', 'of Allah'], ['وَأَتُوبُ', 'and I repent'], ['إِلَيْهِ', 'to Him']],
       meaning: 'I seek Allah\'s forgiveness and I turn to Him in repentance.', easy: 'Forgive me, Allah — I\'m coming back to You.',
@@ -490,10 +522,10 @@ body.focus .stage:not(.finished) { flex: 0 0 auto; margin-top: 2vh; }
       id: 'after-salah', name: 'Tasbīḥ after Ṣalāh', seq: true,
       pick: 'سُبْحَانَ اللَّهِ · الْحَمْدُ لِلَّهِ · اللَّهُ أَكْبَرُ',
       phases: [
-        { ar: 'سُبْحَانَ اللَّهِ', tr: 'SubḥānAllāh', en: 'Glory be to Allah', n: 33, short: 'SubḥānAllāh', flow: [['سُبْحَانَ اللَّهِ', 'Glory be to Allah']] },
-        { ar: 'الْحَمْدُ لِلَّهِ', tr: 'Alḥamdulillāh', en: 'All praise is for Allah', n: 33, short: 'Alḥamdulillāh', flow: [['الْحَمْدُ لِلَّهِ', 'All praise is for Allah']] },
-        { ar: 'اللَّهُ أَكْبَرُ', tr: 'Allāhu Akbar', en: 'Allah is the Greatest', n: 33, short: 'Allāhu Akbar', flow: [['اللَّهُ أَكْبَرُ', 'Allah is the Greatest']] },
-        { ar: TAHLIL_AR, tr: TAHLIL_TR, en: TAHLIL_EN, n: 1, short: 'Lā ilāha illallāhu', flow: TAHLIL_FLOW }
+        { ar: 'سُبْحَانَ اللَّهِ', tr: 'SubḥānAllāh', en: 'Glory be to Allah', n: 33, short: 'SubḥānAllāh', reflect: 'He is perfect, far above every flaw.', flow: [['سُبْحَانَ اللَّهِ', 'Glory be to Allah']] },
+        { ar: 'الْحَمْدُ لِلَّهِ', tr: 'Alḥamdulillāh', en: 'All praise is for Allah', n: 33, short: 'Alḥamdulillāh', reflect: 'Every blessing is from Him; all thanks belongs to Him.', flow: [['الْحَمْدُ لِلَّهِ', 'All praise is for Allah']] },
+        { ar: 'اللَّهُ أَكْبَرُ', tr: 'Allāhu Akbar', en: 'Allah is the Greatest', n: 33, short: 'Allāhu Akbar', reflect: 'He is greater than anything in my heart or my life.', flow: [['اللَّهُ أَكْبَرُ', 'Allah is the Greatest']] },
+        { ar: TAHLIL_AR, tr: TAHLIL_TR, en: TAHLIL_EN, n: 1, short: 'Lā ilāha illallāhu', reflect: TAHLIL_REFLECT, flow: TAHLIL_FLOW }
       ],
       expl: [],
       virtue: 'Whoever says these after every prayer — 33, 33, 33, completing 100 with Lā ilāha illallāh… — his sins are forgiven even if they were like the foam of the sea.',
@@ -502,6 +534,7 @@ body.focus .stage:not(.finished) { flex: 0 0 auto; margin-top: 2vh; }
     },
     {
       id: 'tahlil', name: 'Tahlīl',
+      reflect: TAHLIL_REFLECT,
       ar: TAHLIL_AR, tr: TAHLIL_TR, flow: TAHLIL_FLOW,
       meaning: TAHLIL_EN, easy: 'Only Allah — no partner. Everything is His, all praise is His, and He can do anything.',
       expl: [['Lā ilāha illallāh:', ' the testimony of tawḥīd. Nothing deserves worship but Him.'],
@@ -513,6 +546,7 @@ body.focus .stage:not(.finished) { flex: 0 0 auto; margin-top: 2vh; }
     },
     {
       id: 'two-words', name: 'Two words heavy on the Scale',
+      reflect: 'Perfect and praised is my Lord — perfect and Magnificent beyond measure.',
       ar: 'سُبْحَانَ اللَّهِ وَبِحَمْدِهِ، سُبْحَانَ اللَّهِ الْعَظِيمِ', tr: 'SubḥānAllāhi wa biḥamdihī, SubḥānAllāhil-ʿAẓīm',
       flow: [['سُبْحَانَ اللَّهِ', 'Glory be to Allah'], ['وَبِحَمْدِهِ', 'and with His praise'], ['سُبْحَانَ اللَّهِ الْعَظِيمِ', 'Glory be to Allah, the Magnificent']],
       meaning: 'Glory be to Allah and with His praise; glory be to Allah, the Magnificent.', easy: 'Allah is perfect and praised. Allah is perfect and Magnificent.',
@@ -524,6 +558,7 @@ body.focus .stage:not(.finished) { flex: 0 0 auto; margin-top: 2vh; }
     },
     {
       id: 'salawat', name: 'Ṣalawāt upon the Prophet ﷺ',
+      reflect: 'O Allah, raise the honour of Your Prophet ﷺ and his family, and send Your mercy upon them.',
       ar: 'اللَّهُمَّ صَلِّ عَلَىٰ مُحَمَّدٍ وَعَلَىٰ آلِ مُحَمَّدٍ', tr: 'Allāhumma ṣalli ʿalā Muḥammadin wa ʿalā āli Muḥammad',
       flow: [['اللَّهُمَّ', 'O Allah'], ['صَلِّ', 'send blessings'], ['عَلَىٰ مُحَمَّدٍ', 'upon Muhammad'], ['وَعَلَىٰ آلِ مُحَمَّدٍ', 'and upon the family of Muhammad']],
       meaning: 'O Allah, send blessings upon Muhammad and upon the family of Muhammad.', easy: 'O Allah, honour and bless the Prophet and his family.',
@@ -535,6 +570,7 @@ body.focus .stage:not(.finished) { flex: 0 0 auto; margin-top: 2vh; }
     },
     {
       id: 'hawqala', name: 'Lā ḥawla wa lā quwwata illā billāh',
+      reflect: 'I have no strength of my own — every ability I have comes only from Allah.',
       ar: 'لَا حَوْلَ وَلَا قُوَّةَ إِلَّا بِاللَّهِ', tr: 'Lā ḥawla wa lā quwwata illā billāh',
       flow: [['لَا حَوْلَ', 'There is no power'], ['وَلَا قُوَّةَ', 'and no strength'], ['إِلَّا بِاللَّهِ', 'except with Allah']],
       meaning: 'There is no power and no strength except with Allah.', easy: 'I can\'t do it without Allah. With Him, I can.',
@@ -546,6 +582,7 @@ body.focus .stage:not(.finished) { flex: 0 0 auto; margin-top: 2vh; }
     },
     {
       id: 'four-words', name: 'The four most beloved words',
+      reflect: 'He is perfect, He is praised, He alone is God, and He is greater than all.',
       ar: 'سُبْحَانَ اللَّهِ، وَالْحَمْدُ لِلَّهِ، وَلَا إِلَٰهَ إِلَّا اللَّهُ، وَاللَّهُ أَكْبَرُ',
       tr: 'SubḥānAllāh, walḥamdulillāh, wa lā ilāha illallāh, wallāhu akbar',
       flow: [['سُبْحَانَ اللَّهِ', 'Glory be to Allah'], ['وَالْحَمْدُ لِلَّهِ', 'all praise is for Allah'], ['وَلَا إِلَٰهَ إِلَّا اللَّهُ', 'none is worthy of worship but Allah'], ['وَاللَّهُ أَكْبَرُ', 'and Allah is the Greatest']],
@@ -559,6 +596,7 @@ body.focus .stage:not(.finished) { flex: 0 0 auto; margin-top: 2vh; }
     },
     {
       id: 'juwayriyah', name: 'Morning tasbīḥ of Juwayriyah',
+      reflect: 'Endless glory and praise — as countless as His creation, as heavy as His Throne, as vast as His words.',
       ar: 'سُبْحَانَ اللَّهِ وَبِحَمْدِهِ، عَدَدَ خَلْقِهِ، وَرِضَا نَفْسِهِ، وَزِنَةَ عَرْشِهِ، وَمِدَادَ كَلِمَاتِهِ',
       tr: 'SubḥānAllāhi wa biḥamdihī, ʿadada khalqihī, wa riḍā nafsihī, wa zinata ʿarshihī, wa midāda kalimātih',
       flow: [['سُبْحَانَ اللَّهِ وَبِحَمْدِهِ', 'Glory and praise be to Allah'], ['عَدَدَ خَلْقِهِ', 'as many as His creation'], ['وَرِضَا نَفْسِهِ', 'as much as pleases Him'], ['وَزِنَةَ عَرْشِهِ', 'the weight of His Throne'], ['وَمِدَادَ كَلِمَاتِهِ', 'the ink of His words']],
@@ -581,7 +619,8 @@ body.focus .stage:not(.finished) { flex: 0 0 auto; margin-top: 2vh; }
       focusBtn = $('focusBtn'), exitBtn = $('exitFocus'), infoBtn = $('infoBtn'), sheet = $('sheet'), settingsBtn = $('settingsBtn'),
       settings = $('settings'), arEl = $('ar'), dots = $('dots'), translitEl = $('translit'), meaningEl = $('meaning'),
       easyEl = $('easy'), focusline = $('focusline'), presetBtn = $('presetBtn'), presetName = $('presetName'),
-      picker = $('picker'), pkList = $('pkList'), chips = $('chips'), cform = $('cform'), cinput = $('cinput'), cerr = $('cerr'), tgt = $('tgt');
+      picker = $('picker'), pkList = $('pkList'), chips = $('chips'), cform = $('cform'), cinput = $('cinput'), cerr = $('cerr'), tgt = $('tgt'),
+      rlineEl = $('rline'), underW = $('underW'), underR = $('underR');
 
   var reduced = false;
   try { reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches; } catch (e) {}
@@ -626,7 +665,7 @@ body.focus .stage:not(.finished) { flex: 0 0 auto; margin-top: 2vh; }
     var fresh = !s || typeof s !== 'object';
     var migrated = false;
     if (fresh) {
-      s = { v: 4, sel: PRESETS[0].id, focus: false, remind: true, timerOn: true, vib: true, p: {} };
+      s = { v: 4, sel: PRESETS[0].id, focus: false, remind: true, timerOn: true, vib: true, under: 'w', p: {} };
       // migrate v3 keys into preset 1
       var c = parseInt(lsGet('dhikr.count'), 10);
       var rawP = { count: c >= 0 && c <= 100 ? c : 0, target: 100 };
@@ -640,7 +679,7 @@ body.focus .stage:not(.finished) { flex: 0 0 auto; margin-top: 2vh; }
       s.timerOn = lsGet('dhikr.timerOn') !== 'off';
       migrated = true;
     }
-    S = { v: 4, sel: byId[s.sel] ? s.sel : PRESETS[0].id, focus: !!s.focus, remind: s.remind !== false, timerOn: s.timerOn !== false, vib: s.vib !== false, p: {} };
+    S = { v: 4, sel: byId[s.sel] ? s.sel : PRESETS[0].id, focus: !!s.focus, remind: s.remind !== false, timerOn: s.timerOn !== false, vib: s.vib !== false, under: s.under === 'r' ? 'r' : 'w', p: {} };
     PRESETS.forEach(function (pr) {
       var rp = s.p && s.p[pr.id];
       S.p[pr.id] = cleanP(pr, rp);
@@ -698,7 +737,7 @@ body.focus .stage:not(.finished) { flex: 0 0 auto; margin-top: 2vh; }
   function view() {
     if (!cur.seq) return cur;
     var ph = cur.phases[P.phase];
-    return { ar: ph.ar, tr: ph.tr, flow: ph.flow, meaning: ph.en, easy: '' };
+    return { ar: ph.ar, tr: ph.tr, flow: ph.flow, meaning: ph.en, easy: '', reflect: ph.reflect };
   }
   function bucket(n) { return n <= 30 ? 's' : n <= 48 ? 'm' : n <= 75 ? 'l' : 'xl'; }
   function buildPhrase() {
@@ -714,6 +753,23 @@ body.focus .stage:not(.finished) { flex: 0 0 auto; margin-top: 2vh; }
     ['s', 'm', 'l', 'xl'].forEach(function (b) { screenEl.classList.toggle('len-' + b, b === bucket(v.ar.length)); });
     translitEl.textContent = v.tr; meaningEl.textContent = v.meaning; easyEl.textContent = v.easy || '';
     focusline.textContent = v.meaning;
+    rlineEl.textContent = v.reflect || '';
+    // with the reflective line on, never show (nearly) the same sentence twice on the counting screen
+    easyEl.classList.toggle('dup', similar(v.easy || '', v.reflect || ''));
+    applyUnder();
+    buildInfo();
+  }
+  function words(t) { return t.toLowerCase().replace(/[^a-z\s]/g, ' ').split(/\s+/).filter(function (x) { return x && x !== 'and'; }); }
+  function similar(a, b) {
+    var A = words(a), B = words(b); if (!A.length || !B.length) return false;
+    var u = {}, i = 0, n = 0; A.forEach(function (x) { u[x] = 1; }); B.forEach(function (x) { if (u[x] === 1) { u[x] = 2; i++; } else if (!u[x]) u[x] = 3; });
+    for (var k in u) n++;
+    return i / n >= 0.8;
+  }
+  function applyUnder() {
+    var r = S.under === 'r';
+    screenEl.classList.toggle('mode-r', r);
+    underW.checked = !r; underR.checked = r;
   }
   var phraseTimer = null;
   function renderPhrase(animate) {
@@ -727,6 +783,13 @@ body.focus .stage:not(.finished) { flex: 0 0 auto; margin-top: 2vh; }
   function el(tag, cls, text) { var e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; }
   function buildInfo() {
     sheet.textContent = '';
+    var rv = view().reflect;
+    if (rv) {
+      var rf = el('div', 'reflect');
+      rf.appendChild(el('h2', 'rh', 'Hold this in your heart'));
+      rf.appendChild(el('p', 'rt', rv));
+      sheet.appendChild(rf);
+    }
     sheet.appendChild(el('h2', null, 'Meaning & virtue'));
     sheet.appendChild(el('p', 'pname', cur.name));
     var ul = el('ul');
@@ -866,6 +929,14 @@ body.focus .stage:not(.finished) { flex: 0 0 auto; margin-top: 2vh; }
     if (!done.hidden) {
       var h = done.getBoundingClientRect().height;
       screenEl.style.setProperty('--done-h', Math.ceil(h + 6) + 'px');
+    }
+    var RL = [1.1875, 1.125, 1.0625, 1, 0.9375], j;
+    screenEl.style.setProperty('--rl', RL[0]);
+    if (S.under === 'r') {
+      screenEl.style.setProperty('--rs', 1); screenEl.style.setProperty('--ars', 1);
+      screenEl.classList.remove('lite1'); screenEl.classList.remove('lite2');
+      for (j = 0; j < RL.length; j++) { screenEl.style.setProperty('--rl', RL[j]); if (!overflows()) break; }
+      if (j < RL.length) { hintFit(); return; }
     }
     for (i = 0; i < STEPS.length; i++) {
       var s = STEPS[i];
@@ -1032,6 +1103,9 @@ body.focus .stage:not(.finished) { flex: 0 0 auto; margin-top: 2vh; }
       vibLbl.textContent = 'Vibration';
     }
   }
+  function setUnder(v) { S.under = v === 'r' ? 'r' : 'w'; save(); applyUnder(); scheduleFit(); }
+  underW.addEventListener('change', function () { if (underW.checked) setUnder('w'); });
+  underR.addEventListener('change', function () { if (underR.checked) setUnder('r'); });
   remindBtn.addEventListener('click', function () {
     S.remind = !S.remind; save(); renderSwitches();
     if (!S.remind) hideReminder(false);
